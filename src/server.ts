@@ -15,7 +15,9 @@ export const fromUrl = async (args: { url: string }) => {
   if (url.hostname !== "github.com") {
     throw new Error("Invalid GitHub URL");
   }
-  const [owner, repo] = url.pathname.slice(1).split("/");
+  const pathParts = url.pathname.slice(1).split("/");
+  const owner = pathParts[0];
+  const repo = pathParts[1];
   if (!owner || !repo) {
     throw new Error("Invalid GitHub URL path");
   }
