@@ -6,7 +6,7 @@ This server provides tools to convert between GitHub repository information and 
 
 ## Background
 
-This tool was created to solve the problem where LLMs often struggle to properly handle GitHub-related tasks. Many LLMs have difficulty constructing correct GitHub URLs from repository information or parsing GitHub URLs to extract meaningful components. This server provides specialized tools that make these operations reliable and consistent for AI applications.
+This tool was created to solve the problem where LLMs often struggle to properly handle GitHub-related tasks and fail to appropriately call MCP tools for GitHub operations. Many LLMs have difficulty constructing correct GitHub URLs from repository information, parsing GitHub URLs to extract meaningful components, or knowing when to use available MCP tools for GitHub-related requests. This server provides specialized tools that make these operations reliable and consistent for AI applications.
 
 *Note: This issue might be specific to the LLMs I commonly use, but providing dedicated tools ensures consistent behavior across different AI systems.*
 
