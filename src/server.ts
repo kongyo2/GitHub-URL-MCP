@@ -7,13 +7,18 @@ const server = new FastMCP({
 });
 
 /**
- * Validates if a GitHub repository exists and is publicly accessible
+ * Validates if a GitHub repository exists and determines its accessibility
  * Uses HEAD request to avoid downloading content
  */
 const validateRepository = async (
   owner: string,
   repo: string,
-): Promise<{ error?: string; exists: boolean }> => {
+): Promise<{
+  error?: string;
+  exists: boolean;
+  isPrivate?: boolean;
+  status: 'public' | 'private' | 'not_found' | 'error';
+}> => {
   try {
     const response = await fetch(`https://github.com/${owner}/${repo}`, {
       method: "HEAD",
@@ -21,7 +26,42 @@ const validateRepository = async (
       signal: AbortSignal.timeout(5000),
     });
 
-    return { exists: response.status === 200 };
+    if (response.status === 200) {
+      return {
+        exists: true,
+        isPrivate: false,
+        status: 'public'
+      };
+    } else if (response.status === 404) {
+      // 404 can mean either the repo doesn't exist or it's private
+      // Try to access the owner's profile to distinguish
+      const ownerResponse = await fetch(`https://github.com/${owner}`, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (ownerResponse.status === 200) {
+        // Owner exists, so the repo is likely private
+        return {
+          exists: true,
+          isPrivate: true,
+          status: 'private'
+        };
+      } else {
+        // Owner doesn't exist, so repo doesn't exist
+        return {
+          exists: false,
+          status: 'not_found'
+        };
+      }
+    } else {
+      // Other status codes (403, 500, etc.)
+      return {
+        exists: false,
+        error: `HTTP ${response.status}`,
+        status: 'error'
+      };
+    }
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
@@ -30,6 +70,7 @@ const validateRepository = async (
         ? "Request timeout"
         : "Network error",
       exists: false,
+      status: 'error'
     };
   }
 };
@@ -87,12 +128,19 @@ export const buildGitHubUrl = async (args: { owner: string; repo: string }) => {
   const url = `https://github.com/${owner}/${repo}`;
   const validation = await validateRepository(owner, repo);
 
-  if (!validation.exists) {
-    const errorInfo = validation.error ? ` (${validation.error})` : "";
-    return `${url}\n\n⚠️ Warning: Repository may not exist or is not publicly accessible${errorInfo}`;
+  switch (validation.status) {
+    case 'public':
+      return url;
+    case 'private':
+      return `${url}\n\n🔒 Note: Repository exists but is private`;
+    case 'not_found':
+      return `${url}\n\n⚠️ Warning: Repository does not exist`;
+    case 'error':
+      const errorInfo = validation.error ? ` (${validation.error})` : "";
+      return `${url}\n\n❌ Error: Unable to verify repository${errorInfo}`;
+    default:
+      return url;
   }
-
-  return url;
 };
 
 /**
@@ -106,18 +154,38 @@ export const parseGitHubUrlTool = async (args: { url: string }) => {
     owner: parsed.owner,
     repo: parsed.repo,
     url: `https://github.com/${parsed.owner}/${parsed.repo}`,
+    status: validation.status,
     ...(parsed.path && { additionalPath: parsed.path }),
   };
 
-  if (!validation.exists) {
-    const errorInfo = validation.error ? ` (${validation.error})` : "";
-    return JSON.stringify({
-      ...result,
-      warning: `Repository may not exist or is not publicly accessible${errorInfo}`,
-    });
+  switch (validation.status) {
+    case 'public':
+      return JSON.stringify({
+        ...result,
+        accessible: true,
+      });
+    case 'private':
+      return JSON.stringify({
+        ...result,
+        accessible: false,
+        note: "Repository exists but is private",
+      });
+    case 'not_found':
+      return JSON.stringify({
+        ...result,
+        accessible: false,
+        warning: "Repository does not exist",
+      });
+    case 'error':
+      const errorInfo = validation.error ? ` (${validation.error})` : "";
+      return JSON.stringify({
+        ...result,
+        accessible: false,
+        error: `Unable to verify repository${errorInfo}`,
+      });
+    default:
+      return JSON.stringify(result);
   }
-
-  return JSON.stringify(result);
 };
 
 // Tool for converting owner/repo to GitHub URL
