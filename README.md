@@ -6,6 +6,8 @@ This server provides two tools:
 - `to-url`: Converts an owner and repository name into a full GitHub URL.
 - `from-url`: Converts a GitHub URL into its owner and repository name.
 
+This was created as a personal approach to solving the problem that current LLMs sometimes do not handle GitHub-related tools correctly (although this may just be an issue with the performance of the LLM I usually use).
+
 ## Development
 
 To get started, clone the repository and install the dependencies.

@@ -32,5 +32,15 @@ describe("GitHub URL Converter Tools", () => {
         fromUrl({ url: "https://github.com/test-owner" }),
       ).rejects.toThrow("Invalid GitHub URL path");
     });
+
+    it("should handle URLs with extra path segments", async () => {
+      const result = await fromUrl({
+        url: "https://github.com/test-owner/test-repo/tree/main",
+      });
+      expect(JSON.parse(result as string)).toEqual({
+        owner: "test-owner",
+        repo: "test-repo",
+      });
+    });
   });
 });
