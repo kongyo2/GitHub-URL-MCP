@@ -39,12 +39,12 @@ describe("GitHub URL Handler Tools", () => {
     });
 
     it("should show note for actual private repository", async () => {
-      // Using a known private repository: https://github.com/kongyo2/kongyo15
+      // Using a known private repository: https://github.com/kongyo2/2
       const result = await buildGitHubUrl({
         owner: "kongyo2",
-        repo: "kongyo15",
+        repo: "2",
       });
-      expect(result).toContain("https://github.com/kongyo2/kongyo15");
+      expect(result).toContain("https://github.com/kongyo2/2");
       expect(result).toContain("🔒 Note: Repository exists but is private");
     });
 
@@ -108,14 +108,14 @@ describe("GitHub URL Handler Tools", () => {
     });
 
     it("should detect actual private repository", async () => {
-      // Using a known private repository: https://github.com/kongyo2/kongyo15
+      // Using a known private repository: https://github.com/kongyo2/2
       const result = await parseGitHubUrlTool({
-        url: "https://github.com/kongyo2/kongyo15",
+        url: "https://github.com/kongyo2/2",
       });
       const parsed = JSON.parse(result as string);
       expect(parsed.owner).toBe("kongyo2");
-      expect(parsed.repo).toBe("kongyo15");
-      expect(parsed.url).toBe("https://github.com/kongyo2/kongyo15");
+      expect(parsed.repo).toBe("2");
+      expect(parsed.url).toBe("https://github.com/kongyo2/2");
       expect(parsed.status).toBe("private");
       expect(parsed.accessible).toBe(false);
       expect(parsed.note).toBe("Repository exists but is private");
