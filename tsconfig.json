@@ -2,8 +2,7 @@
   "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "lib": ["ES2015", "DOM"],
-    "noImplicitAny": false
+    "lib": ["ES2015", "DOM"]
   },
   "include": ["src"]
 }
