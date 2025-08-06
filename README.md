@@ -4,6 +4,10 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kongyo2/GitHub-URL-MCP)
 
+<a href="https://glama.ai/mcp/servers/@kongyo2/GitHub-URL-MCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@kongyo2/GitHub-URL-MCP/badge" alt="GitHub URL Server MCP server" />
+</a>
+
 An MCP (Model Context Protocol) server for handling GitHub URLs with validation and parsing capabilities.
 
 This server provides tools to convert between GitHub repository information and URLs, with intelligent validation to distinguish between public repositories, private repositories, and non-existent repositories.
