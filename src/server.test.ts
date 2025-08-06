@@ -20,8 +20,21 @@ describe("GitHub URL Handler Tools", () => {
       expect(result).toContain(
         "https://github.com/non-existent-owner-12345/non-existent-repo-67890",
       );
+      expect(result).toContain("⚠️ Warning: Repository does not exist");
+    });
+
+    it("should show note for private repository", async () => {
+      // Using a known organization with likely private repos
+      const result = await buildGitHubUrl({
+        owner: "microsoft",
+        repo: "private-test-repo-that-does-not-exist-12345",
+      });
       expect(result).toContain(
-        "⚠️ Warning: Repository may not exist or is not publicly accessible",
+        "https://github.com/microsoft/private-test-repo-that-does-not-exist-12345",
+      );
+      // This will likely be detected as private since microsoft exists
+      expect(result).toMatch(
+        /🔒 Note: Repository exists but is private|⚠️ Warning: Repository does not exist/,
       );
     });
 
@@ -50,11 +63,11 @@ describe("GitHub URL Handler Tools", () => {
         url: "https://github.com/microsoft/vscode",
       });
       const parsed = JSON.parse(result as string);
-      expect(parsed).toEqual({
-        owner: "microsoft",
-        repo: "vscode",
-        url: "https://github.com/microsoft/vscode",
-      });
+      expect(parsed.owner).toBe("microsoft");
+      expect(parsed.repo).toBe("vscode");
+      expect(parsed.url).toBe("https://github.com/microsoft/vscode");
+      expect(parsed.status).toBe("public");
+      expect(parsed.accessible).toBe(true);
     });
 
     it("should include warning for non-existent repository", async () => {
@@ -67,9 +80,21 @@ describe("GitHub URL Handler Tools", () => {
       expect(parsed.url).toBe(
         "https://github.com/non-existent-owner-12345/non-existent-repo-67890",
       );
-      expect(parsed.warning).toContain(
-        "Repository may not exist or is not publicly accessible",
-      );
+      expect(parsed.status).toBe("not_found");
+      expect(parsed.accessible).toBe(false);
+      expect(parsed.warning).toBe("Repository does not exist");
+    });
+
+    it("should handle private repository detection", async () => {
+      const result = await parseGitHubUrlTool({
+        url: "https://github.com/microsoft/private-test-repo-that-does-not-exist-12345",
+      });
+      const parsed = JSON.parse(result as string);
+      expect(parsed.owner).toBe("microsoft");
+      expect(parsed.repo).toBe("private-test-repo-that-does-not-exist-12345");
+      expect(parsed.accessible).toBe(false);
+      // Should be either private or not_found
+      expect(["private", "not_found"]).toContain(parsed.status);
     });
 
     it("should throw error for non-GitHub URL", async () => {
@@ -101,12 +126,12 @@ describe("GitHub URL Handler Tools", () => {
         url: "https://github.com/microsoft/vscode/tree/main/src",
       });
       const parsed = JSON.parse(result as string);
-      expect(parsed).toEqual({
-        additionalPath: "tree/main/src",
-        owner: "microsoft",
-        repo: "vscode",
-        url: "https://github.com/microsoft/vscode",
-      });
+      expect(parsed.owner).toBe("microsoft");
+      expect(parsed.repo).toBe("vscode");
+      expect(parsed.url).toBe("https://github.com/microsoft/vscode");
+      expect(parsed.additionalPath).toBe("tree/main/src");
+      expect(parsed.status).toBe("public");
+      expect(parsed.accessible).toBe(true);
     });
 
     it("should handle URLs with query parameters", async () => {

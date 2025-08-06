@@ -17,7 +17,7 @@ const validateRepository = async (
   error?: string;
   exists: boolean;
   isPrivate?: boolean;
-  status: 'public' | 'private' | 'not_found' | 'error';
+  status: "error" | "not_found" | "private" | "public";
 }> => {
   try {
     const response = await fetch(`https://github.com/${owner}/${repo}`, {
@@ -30,7 +30,7 @@ const validateRepository = async (
       return {
         exists: true,
         isPrivate: false,
-        status: 'public'
+        status: "public",
       };
     } else if (response.status === 404) {
       // 404 can mean either the repo doesn't exist or it's private
@@ -45,21 +45,21 @@ const validateRepository = async (
         return {
           exists: true,
           isPrivate: true,
-          status: 'private'
+          status: "private",
         };
       } else {
         // Owner doesn't exist, so repo doesn't exist
         return {
           exists: false,
-          status: 'not_found'
+          status: "not_found",
         };
       }
     } else {
       // Other status codes (403, 500, etc.)
       return {
-        exists: false,
         error: `HTTP ${response.status}`,
-        status: 'error'
+        exists: false,
+        status: "error",
       };
     }
   } catch (error) {
@@ -70,7 +70,7 @@ const validateRepository = async (
         ? "Request timeout"
         : "Network error",
       exists: false,
-      status: 'error'
+      status: "error",
     };
   }
 };
@@ -129,15 +129,16 @@ export const buildGitHubUrl = async (args: { owner: string; repo: string }) => {
   const validation = await validateRepository(owner, repo);
 
   switch (validation.status) {
-    case 'public':
-      return url;
-    case 'private':
-      return `${url}\n\n🔒 Note: Repository exists but is private`;
-    case 'not_found':
-      return `${url}\n\n⚠️ Warning: Repository does not exist`;
-    case 'error':
+    case "error": {
       const errorInfo = validation.error ? ` (${validation.error})` : "";
       return `${url}\n\n❌ Error: Unable to verify repository${errorInfo}`;
+    }
+    case "not_found":
+      return `${url}\n\n⚠️ Warning: Repository does not exist`;
+    case "private":
+      return `${url}\n\n🔒 Note: Repository exists but is private`;
+    case "public":
+      return url;
     default:
       return url;
   }
@@ -153,35 +154,36 @@ export const parseGitHubUrlTool = async (args: { url: string }) => {
   const result = {
     owner: parsed.owner,
     repo: parsed.repo,
-    url: `https://github.com/${parsed.owner}/${parsed.repo}`,
     status: validation.status,
+    url: `https://github.com/${parsed.owner}/${parsed.repo}`,
     ...(parsed.path && { additionalPath: parsed.path }),
   };
 
   switch (validation.status) {
-    case 'public':
-      return JSON.stringify({
-        ...result,
-        accessible: true,
-      });
-    case 'private':
-      return JSON.stringify({
-        ...result,
-        accessible: false,
-        note: "Repository exists but is private",
-      });
-    case 'not_found':
-      return JSON.stringify({
-        ...result,
-        accessible: false,
-        warning: "Repository does not exist",
-      });
-    case 'error':
+    case "error": {
       const errorInfo = validation.error ? ` (${validation.error})` : "";
       return JSON.stringify({
         ...result,
         accessible: false,
         error: `Unable to verify repository${errorInfo}`,
+      });
+    }
+    case "not_found":
+      return JSON.stringify({
+        ...result,
+        accessible: false,
+        warning: "Repository does not exist",
+      });
+    case "private":
+      return JSON.stringify({
+        ...result,
+        accessible: false,
+        note: "Repository exists but is private",
+      });
+    case "public":
+      return JSON.stringify({
+        ...result,
+        accessible: true,
       });
     default:
       return JSON.stringify(result);
