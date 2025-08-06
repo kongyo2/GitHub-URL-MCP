@@ -1,22 +1,21 @@
-# FastMCP Boilerplate
+# GitHub URL Converter MCP Server
 
-A boilerplate for [FastMCP](https://github.com/punkpeye/fastmcp).
+An MCP server for converting between GitHub URLs and owner/repository names.
 
-This boilerplate is a good starting point for building an MCP server. It includes a basic setup for testing, linting, formatting, and publishing to NPM.
+This server provides two tools:
+- `to-url`: Converts an owner and repository name into a full GitHub URL.
+- `from-url`: Converts a GitHub URL into its owner and repository name.
 
 ## Development
 
 To get started, clone the repository and install the dependencies.
 
 ```bash
-git clone https://github.com/punkpeye/fastmcp-boilerplate.git
-cd fastmcp-boilerplate
+git clone <your-repo-url>
+cd <your-repo-name>
 npm install
 npm run dev
 ```
-
-> [!NOTE]
-> If you are starting a new project, you may want to fork [fastmcp-boilerplate](https://github.com/punkpeye/fastmcp-boilerplate) and start from there.
 
 ### Start the server
 
@@ -32,17 +31,17 @@ However, you can also interact with the server using the `dev` script.
 npm run dev
 ```
 
-This will start the server and allow you to interact with it using CLI.
+This will start the server and allow you to interact with it using the CLI.
 
 ### Testing
 
-A good MCP server should have tests. However, you don't need to test the MCP server itself, but rather the tools you implement.
+A good MCP server should have tests. You don't need to test the MCP server itself, but rather the tools you implement.
 
 ```bash
 npm run test
 ```
 
-In the case of this boilerplate, we only test the implementation of the `add` tool.
+In this project, we test the implementation of the `to-url` and `from-url` tools.
 
 ### Linting
 
