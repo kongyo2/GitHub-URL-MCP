@@ -1,76 +1,144 @@
-# GitHub URL Converter MCP Server
+# GitHub URL MCP Server
 
-An MCP server for converting between GitHub URLs and owner/repository names.
+An MCP (Model Context Protocol) server for handling GitHub URLs with validation and parsing capabilities.
 
-This server provides two tools:
+This server provides tools to convert between GitHub repository information and URLs, with built-in validation to check if repositories exist and are publicly accessible.
 
-- `to-url`: Converts an owner and repository name into a full GitHub URL.
-- `from-url`: Converts a GitHub URL into its owner and repository name.
+## Features
 
-This was created as a personal approach to solving the problem that current LLMs sometimes do not handle GitHub-related tools correctly (although this may just be an issue with the performance of the LLM I usually use).
+- **URL Building**: Convert owner/repo pairs to properly formatted GitHub URLs
+- **URL Parsing**: Extract owner, repository, and path information from GitHub URLs
+- **Repository Validation**: Check if repositories exist and are publicly accessible
+- **Error Handling**: Comprehensive error messages for invalid inputs
+- **No Authentication Required**: Works without GitHub API tokens
+- **Timeout Protection**: Network requests have built-in timeouts
+
+## Tools
+
+### `github/build_url`
+
+Converts GitHub owner and repository name into a properly formatted GitHub URL with validation.
+
+**Parameters:**
+
+- `owner` (string): GitHub username or organization name
+- `repo` (string): Repository name
+
+**Example:**
+
+```json
+{
+  "owner": "microsoft",
+  "repo": "vscode"
+}
+```
+
+**Returns:** `https://github.com/microsoft/vscode` (with warning if repository doesn't exist)
+
+### `github/parse_url`
+
+Parses a GitHub URL to extract owner, repository name, and additional path information with validation.
+
+**Parameters:**
+
+- `url` (string): GitHub URL to parse
+
+**Example:**
+
+```json
+{
+  "url": "https://github.com/microsoft/vscode/tree/main/src"
+}
+```
+
+**Returns:**
+
+```json
+{
+  "owner": "microsoft",
+  "repo": "vscode",
+  "url": "https://github.com/microsoft/vscode",
+  "additionalPath": "tree/main/src"
+}
+```
 
 ## Development
 
-To get started, clone the repository and install the dependencies.
+### Setup
 
 ```bash
-git clone <your-repo-url>
-cd <your-repo-name>
 npm install
-npm run dev
 ```
 
 ### Start the server
-
-If you simply want to start the server, you can use the `start` script.
 
 ```bash
 npm run start
 ```
 
-However, you can also interact with the server using the `dev` script.
+### Development mode with CLI interaction
 
 ```bash
 npm run dev
 ```
 
-This will start the server and allow you to interact with it using the CLI.
-
 ### Testing
-
-A good MCP server should have tests. You don't need to test the MCP server itself, but rather the tools you implement.
 
 ```bash
 npm run test
 ```
 
-In this project, we test the implementation of the `to-url` and `from-url` tools.
-
-### Linting
-
-Having a good linting setup reduces the friction for other developers to contribute to your project.
+### Linting and formatting
 
 ```bash
 npm run lint
-```
-
-This boilerplate uses [Prettier](https://prettier.io/), [ESLint](https://eslint.org/) and [TypeScript ESLint](https://typescript-eslint.io/) to lint the code.
-
-### Formatting
-
-Use `npm run format` to format the code.
-
-```bash
 npm run format
 ```
 
-### GitHub Actions
+### Build
 
-This repository has a GitHub Actions workflow that runs linting, formatting, tests, and publishes package updates to NPM using [semantic-release](https://semantic-release.gitbook.io/semantic-release/).
+```bash
+npm run build
+```
 
-In order to use this workflow, you need to:
+## Usage with MCP Clients
 
-1. Add `NPM_TOKEN` to the repository secrets
-   1. [Create a new automation token](https://www.npmjs.com/settings/punkpeye/tokens/new)
-   2. Add token as `NPM_TOKEN` environment secret (Settings → Secrets and Variables → Actions → "Manage environment secrets" → "release" → Add environment secret)
-1. Grant write access to the workflow (Settings → Actions → General → Workflow permissions → "Read and write permissions")
+Add this server to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "github-url": {
+      "command": "node",
+      "args": ["path/to/dist/server.js"]
+    }
+  }
+}
+```
+
+Or for development:
+
+```json
+{
+  "mcpServers": {
+    "github-url": {
+      "command": "tsx",
+      "args": ["path/to/src/server.ts"]
+    }
+  }
+}
+```
+
+## Error Handling
+
+The server provides detailed error messages for various scenarios:
+
+- Invalid URL formats
+- Non-GitHub URLs
+- Missing owner or repository information
+- Network timeouts
+- Repository accessibility issues
+
+## License
+
+MIT License - see LICENSE file for details.

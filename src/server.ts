@@ -2,87 +2,194 @@ import { FastMCP } from "fastmcp";
 import { z } from "zod";
 
 const server = new FastMCP({
-  name: "GitHub URL Converter",
+  name: "GitHub URL Handler",
   version: "1.0.0",
 });
 
-const checkRepoExists = async (
+/**
+ * Validates if a GitHub repository exists and is publicly accessible
+ * Uses HEAD request to avoid downloading content
+ */
+const validateRepository = async (
   owner: string,
   repo: string,
-): Promise<boolean> => {
+): Promise<{ error?: string; exists: boolean }> => {
   try {
     const response = await fetch(`https://github.com/${owner}/${repo}`, {
       method: "HEAD",
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(5000),
     });
-    return response.status === 200;
-  } catch {
-    return false;
+
+    return { exists: response.status === 200 };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return {
+      error: errorMessage.includes("timeout")
+        ? "Request timeout"
+        : "Network error",
+      exists: false,
+    };
   }
 };
 
-export const toUrl = async (args: { owner: string; repo: string }) => {
-  const url = `https://github.com/${args.owner}/${args.repo}`;
-  const exists = await checkRepoExists(args.owner, args.repo);
+/**
+ * Parses a GitHub URL and extracts owner and repository information
+ */
+const parseGitHubUrl = (
+  urlString: string,
+): { owner: string; path?: string; repo: string } => {
+  let url: URL;
 
-  if (!exists) {
-    return `${url}\n\n⚠️ Warning: This repository may not exist or is not publicly accessible.`;
+  try {
+    url = new URL(urlString);
+  } catch {
+    throw new Error("Invalid URL format");
+  }
+
+  if (url.hostname !== "github.com") {
+    throw new Error("URL must be from github.com domain");
+  }
+
+  const pathParts = url.pathname.slice(1).split("/").filter(Boolean);
+
+  if (pathParts.length < 2) {
+    throw new Error(
+      "URL must contain both owner and repository name (e.g., https://github.com/owner/repo)",
+    );
+  }
+
+  const [owner, repo, ...remainingPath] = pathParts;
+
+  if (!owner || !repo) {
+    throw new Error("Invalid owner or repository name in URL");
+  }
+
+  return {
+    owner,
+    path: remainingPath.length > 0 ? remainingPath.join("/") : undefined,
+    repo,
+  };
+};
+
+/**
+ * Converts owner and repository name to GitHub URL
+ */
+export const buildGitHubUrl = async (args: { owner: string; repo: string }) => {
+  const { owner, repo } = args;
+
+  // Basic validation
+  if (!owner.trim() || !repo.trim()) {
+    throw new Error("Owner and repository name cannot be empty");
+  }
+
+  const url = `https://github.com/${owner}/${repo}`;
+  const validation = await validateRepository(owner, repo);
+
+  if (!validation.exists) {
+    const errorInfo = validation.error ? ` (${validation.error})` : "";
+    return `${url}\n\n⚠️ Warning: Repository may not exist or is not publicly accessible${errorInfo}`;
   }
 
   return url;
 };
 
-export const fromUrl = async (args: { url: string }) => {
-  const url = new URL(args.url);
-  if (url.hostname !== "github.com") {
-    throw new Error("Invalid GitHub URL");
-  }
-  const pathParts = url.pathname.slice(1).split("/");
-  const owner = pathParts[0];
-  const repo = pathParts[1];
-  if (!owner || !repo) {
-    throw new Error("Invalid GitHub URL path");
-  }
+/**
+ * Parses GitHub URL and extracts repository information
+ */
+export const parseGitHubUrlTool = async (args: { url: string }) => {
+  const parsed = parseGitHubUrl(args.url);
+  const validation = await validateRepository(parsed.owner, parsed.repo);
 
-  const exists = await checkRepoExists(owner, repo);
-  const result = { owner, repo };
+  const result = {
+    owner: parsed.owner,
+    repo: parsed.repo,
+    url: `https://github.com/${parsed.owner}/${parsed.repo}`,
+    ...(parsed.path && { additionalPath: parsed.path }),
+  };
 
-  if (!exists) {
+  if (!validation.exists) {
+    const errorInfo = validation.error ? ` (${validation.error})` : "";
     return JSON.stringify({
       ...result,
-      warning: "This repository may not exist or is not publicly accessible.",
+      warning: `Repository may not exist or is not publicly accessible${errorInfo}`,
     });
   }
 
   return JSON.stringify(result);
 };
 
+// Tool for converting owner/repo to GitHub URL
 server.addTool({
   annotations: {
-    openWorldHint: false,
-    readOnlyHint: true,
-    title: "Convert Owner/Repo to GitHub URL",
+    openWorldHint: false, // No external system interaction beyond validation
+    readOnlyHint: true, // Does not modify any data
+    title: "Build GitHub URL",
   },
-  description: "Converts a GitHub owner and repository name to a GitHub URL.",
-  execute: toUrl,
-  name: "to-url",
+  description:
+    "Converts GitHub owner and repository name into a properly formatted GitHub URL with validation",
+  execute: buildGitHubUrl,
+  name: "github/build_url",
   parameters: z.object({
-    owner: z.string().describe("The owner of the repository"),
-    repo: z.string().describe("The name of the repository"),
+    owner: z
+      .string()
+      .min(1, "Owner cannot be empty")
+      .describe(
+        "GitHub username or organization name (e.g., 'microsoft', 'facebook')",
+      ),
+    repo: z
+      .string()
+      .min(1, "Repository name cannot be empty")
+      .describe("Repository name (e.g., 'vscode', 'react')"),
   }),
 });
 
+// Tool for parsing GitHub URL to extract components
 server.addTool({
   annotations: {
-    openWorldHint: false,
-    readOnlyHint: true,
-    title: "Convert GitHub URL to Owner/Repo",
+    openWorldHint: false, // No external system interaction beyond validation
+    readOnlyHint: true, // Does not modify any data
+    title: "Parse GitHub URL",
   },
-  description: "Converts a GitHub URL to its owner and repository name.",
-  execute: fromUrl,
-  name: "from-url",
+  description:
+    "Parses a GitHub URL to extract owner, repository name, and additional path information with validation",
+  execute: parseGitHubUrlTool,
+  name: "github/parse_url",
   parameters: z.object({
-    url: z.string().url().describe("The GitHub URL to convert"),
+    url: z
+      .string()
+      .url("Must be a valid URL")
+      .describe(
+        "GitHub URL to parse (e.g., 'https://github.com/microsoft/vscode' or 'https://github.com/facebook/react/tree/main/packages')",
+      ),
   }),
+});
+
+// Add a resource that provides information about the server
+server.addResource({
+  async load() {
+    return {
+      text: `GitHub URL Handler MCP Server
+
+This server provides tools for working with GitHub URLs:
+
+1. github/build_url - Convert owner/repo to GitHub URL
+2. github/parse_url - Parse GitHub URL to extract components
+
+Features:
+- Repository existence validation
+- Proper error handling for invalid URLs
+- Support for URLs with additional path segments
+- Network timeout protection
+- Detailed error messages
+
+All operations are read-only and do not require GitHub API authentication.`,
+    };
+  },
+  mimeType: "text/plain",
+  name: "Server Information",
+  uri: "github-url-handler://info",
 });
 
 server.start({

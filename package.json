@@ -1,7 +1,7 @@
 {
-  "name": "fastmcp-boilerplate",
+  "name": "github-url-mcp-server",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "tsx src/server.ts",
@@ -13,7 +13,9 @@
   "keywords": [
     "fastmcp",
     "mcp",
-    "boilerplate"
+    "github",
+    "url",
+    "converter"
   ],
   "repository": {
     "url": "https://github.com/punkpeye/fastmcp-boilerplate"
@@ -22,7 +24,7 @@
   "homepage": "https://glama.ai/mcp",
   "type": "module",
   "license": "MIT",
-  "description": "A boilerplate for FastMCP",
+  "description": "MCP server for GitHub URL conversion and validation",
   "dependencies": {
     "fastmcp": "^1.27.3",
     "zod": "^3.24.4"

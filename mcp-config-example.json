@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "github-url": {
+      "command": "node",
+      "args": ["./dist/server.js"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": ["github/build_url", "github/parse_url"]
+    }
+  }
+}
