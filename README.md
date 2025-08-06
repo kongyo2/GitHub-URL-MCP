@@ -2,6 +2,8 @@
 
 [![smithery badge](https://smithery.ai/badge/@kongyo2/github-url-mcp)](https://smithery.ai/server/@kongyo2/github-url-mcp)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kongyo2/GitHub-URL-MCP)
+
 An MCP (Model Context Protocol) server for handling GitHub URLs with validation and parsing capabilities.
 
 This server provides tools to convert between GitHub repository information and URLs, with intelligent validation to distinguish between public repositories, private repositories, and non-existent repositories.
