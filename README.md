@@ -4,6 +4,12 @@ An MCP (Model Context Protocol) server for handling GitHub URLs with validation 
 
 This server provides tools to convert between GitHub repository information and URLs, with intelligent validation to distinguish between public repositories, private repositories, and non-existent repositories.
 
+## Background
+
+This tool was created to solve the problem where LLMs often struggle to properly handle GitHub-related tasks. Many LLMs have difficulty constructing correct GitHub URLs from repository information or parsing GitHub URLs to extract meaningful components. This server provides specialized tools that make these operations reliable and consistent for AI applications.
+
+*Note: This issue might be specific to the LLMs I commonly use, but providing dedicated tools ensures consistent behavior across different AI systems.*
+
 ## Features
 
 - **URL Building**: Convert owner/repo pairs to properly formatted GitHub URLs
