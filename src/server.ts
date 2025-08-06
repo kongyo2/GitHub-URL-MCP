@@ -6,8 +6,29 @@ const server = new FastMCP({
   version: "1.0.0",
 });
 
+const checkRepoExists = async (
+  owner: string,
+  repo: string,
+): Promise<boolean> => {
+  try {
+    const response = await fetch(`https://github.com/${owner}/${repo}`, {
+      method: "HEAD",
+    });
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+};
+
 export const toUrl = async (args: { owner: string; repo: string }) => {
-  return `https://github.com/${args.owner}/${args.repo}`;
+  const url = `https://github.com/${args.owner}/${args.repo}`;
+  const exists = await checkRepoExists(args.owner, args.repo);
+
+  if (!exists) {
+    return `${url}\n\n⚠️ Warning: This repository may not exist or is not publicly accessible.`;
+  }
+
+  return url;
 };
 
 export const fromUrl = async (args: { url: string }) => {
@@ -21,7 +42,18 @@ export const fromUrl = async (args: { url: string }) => {
   if (!owner || !repo) {
     throw new Error("Invalid GitHub URL path");
   }
-  return JSON.stringify({ owner, repo });
+
+  const exists = await checkRepoExists(owner, repo);
+  const result = { owner, repo };
+
+  if (!exists) {
+    return JSON.stringify({
+      ...result,
+      warning: "This repository may not exist or is not publicly accessible.",
+    });
+  }
+
+  return JSON.stringify(result);
 };
 
 server.addTool({

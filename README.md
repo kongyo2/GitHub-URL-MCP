@@ -3,6 +3,7 @@
 An MCP server for converting between GitHub URLs and owner/repository names.
 
 This server provides two tools:
+
 - `to-url`: Converts an owner and repository name into a full GitHub URL.
 - `from-url`: Converts a GitHub URL into its owner and repository name.
 
